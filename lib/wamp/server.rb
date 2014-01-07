@@ -11,18 +11,19 @@ module WAMP
       @options   = options
       @options[:engine] ||= {}
       @options[:engine][:type] ||= :memory
-
+      
       @topics    = {}
       @callbacks = {}
       @engine    = WAMP::Engines.const_get(camelize(@options[:engine][:type])).new(@options[:engine])
       @protocol  = WAMP::Protocols::Version1.new
+      @http_dispatcher = HttpDispatcher.new
     end
 
     def available_bindings
       [:subscribe, :unsubscribe, :publish, :call, :prefix, :connect, :disconnect]
     end
 
-    def start
+    def start()
       lambda do |env|
         Faye::WebSocket.load_adapter('thin')
         if Faye::WebSocket.websocket?(env)
@@ -31,17 +32,16 @@ module WAMP
           ws.onopen    = lambda { |event| handle_open(ws, event) }
           ws.onmessage = lambda { |event| handle_message(ws, event) }
           ws.onclose   = lambda { |event| handle_close(ws, event) }
-
+                    
           ws.rack_response
         else
           # Normal HTTP request
-          [200, {'Content-Type' => 'text/plain'}, ['Hello']]
+          @http_dispatcher.handle env
         end
       end
     end
 
   private
-
     def camelize(str)
       str.to_s.split('_').map {|w| w.capitalize}.join
     end
@@ -50,11 +50,11 @@ module WAMP
       client = @engine.create_client(websocket)
       client.websocket.send @protocol.welcome(client.id)
 
-      trigger(:connect, client)
+      trigger(:connect, client, engine.clients)
     end
 
     def handle_message(websocket, event)
-      client = @engine.find_clients(websocket: websocket).first
+      client = @engine.find_clients(websocket: websocket).firstr
 
       data     = JSON.parse(event.data)
       msg_type = data.shift
@@ -121,7 +121,6 @@ module WAMP
     def handle_close(websocket, event)
       # client = @engine.find_clients(websocket: websocket).first
       client = @engine.delete_client(websocket)
-
       trigger(:disconnect, client)
     end
   end
