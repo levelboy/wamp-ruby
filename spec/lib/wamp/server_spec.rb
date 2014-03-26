@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe WAMP::Server do
-  let(:dummy_socket) { DummySocket.new }
   subject { WAMP::Server.new(host: "localhost", port: 9292) }
 
   context "initilization" do
@@ -15,12 +14,6 @@ describe WAMP::Server do
   end
 
   context "#start" do
-    context 'when request is not a websocket request' do
-      it 'should return Not Found' do
-        expect(subject.start().call({}).shift).to eq(404)
-      end
-    end
-
     context 'when request is a websocket request' do
       let!(:ws) { Faye::WebSocket.new({}, ['wamp'], ping: 25) }
       

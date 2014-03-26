@@ -93,6 +93,7 @@ GEM
     rspec-instafail (0.2.4)
     rspec-mocks (2.14.3)
     ruby-progressbar (1.2.0)
+    simple_router (0.9.8.1)
     slop (3.4.6)
     thin (1.6.0)
       daemons (>= 1.0.9)
@@ -117,5 +118,6 @@ DEPENDENCIES
   rb-inotify
   redcarpet
   rspec
+  simple_router
   thin
   yard

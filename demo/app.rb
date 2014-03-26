@@ -1,14 +1,40 @@
 require '../lib/wamp'
 require 'json'
 require 'pry'
+require 'simple_router'
 
-App = WAMP::Server.new
+class Application1 < WAMP::Server
+  include SimpleRouter::DSL
+
+  def initialize(options = {})
+  	super(options)
+  end
+
+  get '/' do |params|
+    'home'
+  end
+
+  post '/' do |context, data|
+  	puts 'posted data ' + data.inspect
+  	sender_id = data['registration_id']
+  	event_data = data['event']
+  	client = context.engine.clients[sender_id]
+  	topic_uri, payload, excluded_clients, included_clients = event_data
+
+  	context.engine.create_event(client, topic_uri, payload, excluded_clients, included_clients)
+      context.trigger(:publish, client, topic_uri, payload, excluded_clients, included_clients)
+
+    data
+  end
+end
+
+App = Application1.new
 
 def log(text)
   puts "[#{Time.now}] #{text}"
 end
 
-App.bind(:connect) do |client|
+App.bind(:connect) do |client, clients|
   log "#{client.id} connected"
 end
 

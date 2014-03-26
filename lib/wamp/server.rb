@@ -1,9 +1,11 @@
 require 'faye/websocket'
 require 'json'
+require 'simple_router'
 
 module WAMP
   class Server
     include WAMP::Bindable
+    include SimpleRouter::DSL
 
     attr_accessor :options, :topics, :callbacks, :engine
 
@@ -15,15 +17,15 @@ module WAMP
       @topics    = {}
       @callbacks = {}
       @engine    = WAMP::Engines.const_get(camelize(@options[:engine][:type])).new(@options[:engine])
+      
       @protocol  = WAMP::Protocols::Version1.new
-      @http_dispatcher = HttpDispatcher.new
     end
 
     def available_bindings
       [:subscribe, :unsubscribe, :publish, :call, :prefix, :connect, :disconnect]
     end
 
-    def start()
+     def start()
       lambda do |env|
         Faye::WebSocket.load_adapter('thin')
         if Faye::WebSocket.websocket?(env)
@@ -36,12 +38,17 @@ module WAMP
           ws.rack_response
         else
           # Normal HTTP request
-          @http_dispatcher.handle env
+          verb, path  = env['REQUEST_METHOD'], Rack::Utils.unescape(env['PATH_INFO'])
+          route = self.class.routes.match(verb, path)
+          data = JSON.parse(env["rack.input"].read)
+          route.nil? ? 
+            [404, {'Content-Type' => 'text/html'}, '404 page not found'] : 
+            [200, {'Content-Type' => 'application/json'}, route.action.call(self, data)]
         end
       end
     end
 
-  private
+  protected
     def camelize(str)
       str.to_s.split('_').map {|w| w.capitalize}.join
     end
@@ -54,7 +61,7 @@ module WAMP
     end
 
     def handle_message(websocket, event)
-      client = @engine.find_clients(websocket: websocket).firstr
+      client = @engine.find_clients(websocket: websocket).first
 
       data     = JSON.parse(event.data)
       msg_type = data.shift

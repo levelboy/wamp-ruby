@@ -11,6 +11,7 @@ module WAMP
   autoload :Socket,      File.join(ROOT, "wamp", "socket")
   autoload :Topic,       File.join(ROOT, "wamp", "topic")
   autoload :MessageType, File.join(ROOT, "wamp", "message_type")
+  autoload :HttpDispatcher, File.join(ROOT, "wamp", "http_dispatcher")
 
   module Engines
     autoload :Memory, File.join(ROOT, "wamp", "engines", "memory")
