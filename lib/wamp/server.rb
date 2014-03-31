@@ -38,6 +38,7 @@ module WAMP
           ws.rack_response
         else
           # Normal HTTP request
+          puts  env.inspect
           verb, path  = env['REQUEST_METHOD'], Rack::Utils.unescape(env['PATH_INFO'])
           route = self.class.routes.match(verb, path)
           data = JSON.parse(env["rack.input"].read)
