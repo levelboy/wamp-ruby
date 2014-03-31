@@ -43,7 +43,7 @@ module WAMP
           data = JSON.parse(env["rack.input"].read)
           route.nil? ? 
             [404, {'Content-Type' => 'text/html'}, '404 page not found'] : 
-            [200, {'Content-Type' => 'application/json'}, route.action.call(self, data)]
+            [200, {'Content-Type' => 'application/json'}, [route.action.call(self, data)]]
         end
       end
     end
