@@ -38,10 +38,14 @@ module WAMP
           ws.rack_response
         else
           # Normal HTTP request
-          puts  env.inspect
           verb, path  = env['REQUEST_METHOD'], Rack::Utils.unescape(env['PATH_INFO'])
           route = self.class.routes.match(verb, path)
-          data = JSON.parse(env["rack.input"].read)
+          data = nil
+          begin
+            data = JSON.parse(env["rack.input"].read)
+          rescue JSON::ParserError => e
+          end
+          
           route.nil? ? 
             [404, {'Content-Type' => 'text/html'}, '404 page not found'] : 
             [200, {'Content-Type' => 'application/json'}, [route.action.call(self, data)]]
